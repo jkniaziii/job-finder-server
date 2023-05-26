@@ -8,6 +8,8 @@ const User = new Schema(
         userId: { type: String },
         isVarified: { type: Boolean },
         isSubscriber: { type: Boolean },
+        password: { type: String },
+        token: { type: String },
         professionalInfo: {
             age: { type: String },
             gender: { type: String },
@@ -20,6 +22,7 @@ const User = new Schema(
             number: { type: String },
             gender: { type: String },
             job_type: { type: String },
+            plan: { type: String },
             cv: { type: String }
         }
 

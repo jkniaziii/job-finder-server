@@ -1,27 +1,67 @@
-const User = require('../models/user-model')
+const User = require('../models/user-model');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+require("dotenv").config();
+
 
 createUser = async (req, res) => {
-  const body = req.body
-  const user = new User(body)
-  const existingUser = await User.findOne({ userId: user.userId });
+  try {
 
-    if (existingUser) {
-      return res.status(200).json({ success: true, message: "User already exists" })
+    const { name, email, password } = req.body;
+    const oldUser = await User.findOne({ email });
+
+    if (oldUser) {
+      return res.status(409).send("User Already Exist. Please Login");
     }
-    user.save()
-      .then(() => {
-        return res.status(200).json({
-          success: true,
-          id: user._id,
-          message: 'User created!',
-        })
-      })
-      .catch(error => {
-        return res.status(400).json({
-          error,
-          message: 'User not created!',
-        })
-  })
+
+    encryptedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      name,
+      email: email.toLowerCase(), // sanitize: convert email to lowercase
+      password: encryptedPassword,
+    });
+
+    const token = jwt.sign(
+      { user_id: user._id, email },
+      process.env.TOKEN_KEY,
+      {
+        expiresIn: "2h",
+      }
+    );
+
+    user.token = token;
+    res.status(201).json(user);
+
+  } catch (err) {
+    return res.status(400).json({
+      err,
+      message: 'User not created!',
+    })
+  }
+  // Our register logic ends here
+}
+
+loginUser = async (req, res) => {
+   try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+
+    if (user && (await bcrypt.compare(password, user.password))) {
+      const token = jwt.sign(
+        { user_id: user._id, email },
+        process.env.TOKEN_KEY,
+        {
+          expiresIn: "2h",
+        }
+      );
+
+      user.token = token;
+      res.status(200).json(user);
+    }
+    res.status(400).send("Invalid Credentials");
+  } catch (err) {
+    console.log(err);
+  }
 }
 
 
@@ -59,10 +99,9 @@ updateUser = async (req, res) => {
 };
 
 
-getUserById = async (req, res) => {
+getUser = async (req, res) => {
     try {
-      console.log("HERE");
-      const user = await User.findOne({ userId: req.params.id });
+      const user = await User.findOne({ userId: req.user.user_id });
       return res.status(200).json({ success: true, data: user });
     } catch (err) {
       return res.status(400).json({ success: false, error: err });
@@ -101,8 +140,16 @@ getMovies = async (req, res) => {
     }).catch(err => console.log(err))
 }
 
+testUser = async (req, res) => {
+  console.log(req.user.user_id)
+  res.status(200).send("Welcome 🙌 ");
+}
+
+
 module.exports = {
     createUser,
+    loginUser,
     updateUser,
-    getUserById,
+    getUser,
+    testUser
 }

@@ -1,7 +1,10 @@
 const mongoose = require('mongoose')
+require("dotenv").config();
+const { MONGO_URI } = process.env;
+
 
 mongoose
-    .connect('mongodb+srv://jabbaswork:jabbaswork@jobfinder.5llb2iq.mongodb.net/?retryWrites=true&w=majority', { useNewUrlParser: true })
+    .connect(MONGO_URI, { useNewUrlParser: true })
     .then(() => console.log("db Connected"))
     .catch(e => {
         console.error('Connection error', e.message)
