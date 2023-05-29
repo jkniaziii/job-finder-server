@@ -20,16 +20,12 @@ const verifyToken = (req, res, next) => {
 
 const verifyRefreshToken = async (refreshToken) => {
   const privateKey = process.env.TOKEN_KEY;
-
   try {
       const doc = await UserToken.findOne({ token: refreshToken });
       if (!doc)
           throw { error: true, message: "Invalid refresh token" };
       const tokenDetails = jwt.verify(refreshToken, privateKey);
-      return {
-          tokenDetails,
-          error: false,
-          message: "Valid refresh token",
+      return {tokenDetails, error: false, message: "Valid refresh token",
       };
   } catch (err) {
       throw { error: true, message: "Invalid refresh token" };
@@ -39,25 +35,10 @@ const verifyRefreshToken = async (refreshToken) => {
 const generateTokens = async (user) => {
   try {
       const payload = { _id: user._id, email: user.email };
-     
-
-      const accessToken = jwt.sign(
-          payload,
-          process.env.TOKEN_KEY,
-          {
-            expiresIn: "2m",
-          }
-        );
-     
-      const refreshToken = jwt.sign(
-          payload,
-          process.env.TOKEN_KEY,
-          { expiresIn: "30d" }
-      );
-
+      const accessToken = jwt.sign(payload, process.env.TOKEN_KEY, { expiresIn: "2m"});
+      const refreshToken = jwt.sign(payload, process.env.TOKEN_KEY, { expiresIn: "30d" });
       const userToken = await UserToken.findOne({ userId: user._id });
-      if (userToken) await userToken.remove();
-
+      if (userToken) await userToken.deleteOne();
       await new UserToken({ userId: user._id, token: refreshToken }).save();
       return Promise.resolve({ accessToken, refreshToken });
   } catch (err) {

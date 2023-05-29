@@ -1,4 +1,5 @@
 const User = require('../models/user-model');
+const UserToken = require('../models/user-token');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const auth = require("../middleware/auth");
@@ -30,9 +31,8 @@ loginUser = async (req, res) => {
 
     if (user && bcrypt.compare(password, user.password)) {
       const { accessToken, refreshToken } = await auth.generateTokens({ _id: user._id, email });
-      user.accessToken = accessToken;
-      user.refreshToken = refreshToken;
-      res.status(200).json(user);
+      const response = { id: user._id, accessToken, refreshToken }
+      res.status(200).json(response);
     }
     res.status(400).send("Invalid Credentials");
   } catch (err) {
@@ -80,10 +80,26 @@ refreshToken = async (req, res) => {
 };
 
 
+logoutUser = async (req, res) => {
+  try {
+    const userToken = await UserToken.findOne({ token: req.body.refreshToken });
+    if (!userToken) {
+      return res.status(200).json({ error: false, message: "Logged Out Sucessfully" });
+    }
+    await userToken.deleteOne();
+    res.status(200).json({ error: false, message: "Logged Out Sucessfully" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: true, message: "Internal Server Error" });
+  }
+};
+
+
 module.exports = {
   createUser,
   loginUser,
   updateUser,
   getUser,
-  refreshToken
+  refreshToken,
+  logoutUser
 }
