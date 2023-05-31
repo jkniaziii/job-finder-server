@@ -31,10 +31,11 @@ loginUser = async (req, res) => {
 
     if (user && bcrypt.compare(password, user.password)) {
       const { accessToken, refreshToken } = await auth.generateTokens({ _id: user._id, email });
-      const response = { id: user._id, accessToken, refreshToken }
-      res.status(200).json(response);
+      const response = { id: user._id, accessToken, refreshToken };
+      return res.status(200).json(response);
     }
-    res.status(400).send("Invalid Credentials");
+
+    return res.status(400).send("Invalid Credentials");
   } catch (err) {
     console.log(err);
   }
@@ -83,6 +84,7 @@ refreshToken = async (req, res) => {
 logoutUser = async (req, res) => {
   try {
     const userToken = await UserToken.findOne({ token: req.body.refreshToken });
+    console.log({userToken});
     if (!userToken) {
       return res.status(200).json({ error: false, message: "Logged Out Sucessfully" });
     }
